@@ -1,0 +1,31 @@
+{
+  "prettier.enable": false,
+  "jest.autoEnable": false,
+  "deno.enable": true,
+  "deno.lint": true,
+  "deno.unstable": true,
+  "deno.import_intellisense_autodiscovery": true,
+  "deno.import_intellisense_origins": {
+    "https://deno.land": true,
+    "https://cnd.skypack.dev": true,
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "denoland.vscode-deno",
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "denoland.vscode-deno",
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "denoland.vscode-deno",
+  },
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "denoland.vscode-deno",
+  },
+  "eslint.enable": false,
+  "watch-run.targetList": [
+    {
+      "target": "/**/*.js",
+      "task": "test"
+    }
+  ],
+}

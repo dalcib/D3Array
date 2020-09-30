@@ -1,0 +1,5 @@
+{
+  "imports": {
+    "d3-array": "./node_modules/d3-array/dist/d3-array.js"
+  }
+}
