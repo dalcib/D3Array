@@ -24,7 +24,7 @@
   "eslint.enable": false,
   "watch-run.targetList": [
     {
-      "target": "/**/*.js",
+      "target": "/**/*.test.js",
       "task": "test"
     }
   ],

@@ -13,13 +13,13 @@ import {
   descending,
 } from "https://cdn.skypack.dev/d3-array@^2.4.0";
 //} from "./node_modules/d3-array/src/index.js";
-import { D3Array, d3a } from "./index.ts";
+import { D3Array, d3a, autoType } from "./index.ts";
 
 const data = [
-  { name: "jim", amount: "34.0", date: "11/12/2015" },
-  { name: "carl", amount: "120.11", date: "11/12/2015" },
-  { name: "stacy", amount: "12.01", date: "01/04/2016" },
-  { name: "stacy", amount: "34.05", date: "01/04/2016" },
+  { name: "jim", amount: "34.0", date: "2015-12-11" },
+  { name: "carl", amount: "120.11", date: "2015-12-11" },
+  { name: "stacy", amount: "12.01", date: "2016-04-01" },
+  { name: "stacy", amount: "34.05", date: "2016-04-01" },
 ];
 const d3Array = new D3Array(data);
 
@@ -56,25 +56,25 @@ test("should emit max and min", () => {
 
 test("should group ", () => {
   expect(d3Array.groups((d) => d.name)[1]).toEqual(
-    ["carl", [{ name: "carl", amount: "120.11", date: "11/12/2015" }]],
+    ["carl", [{ name: "carl", amount: "120.11", date: "2015-12-11" }]],
   );
   const grouped = d3Array.group((d) => d.name);
   expect(grouped.has("jim")).toBeTruthy();
   expect(grouped.get("jim")).toEqual(
-    [{ name: "jim", amount: "34.0", date: "11/12/2015" }],
+    [{ name: "jim", amount: "34.0", date: "2015-12-11" }],
   );
   expect(grouped.get("stacy").length).toEqual(2);
 });
 
 test("should index", () => {
   expect(d3Array.indexes((d) => d.amount)[1]).toEqual(
-    ["120.11", { name: "carl", amount: "120.11", date: "11/12/2015" }],
+    ["120.11", { name: "carl", amount: "120.11", date: "2015-12-11" }],
   );
   //expect(d3Array.index((d) => d.name)).toThrow('duplicate key')
   const indexed = d3Array.index((d) => d.amount);
   expect(indexed.has("120.11")).toBeTruthy();
   expect(indexed.get("34.0")).toEqual(
-    { name: "jim", amount: "34.0", date: "11/12/2015" },
+    { name: "jim", amount: "34.0", date: "2015-12-11" },
   );
 });
 
@@ -152,7 +152,86 @@ test("should perform sets", () => {
   expect((new D3Array([1, 3])).disjoint([2, 4])).toEqual(true);
 });
 
-test("should perform sets", () => {
+test("should create a new d3-chained array", () => {
   expect(d3a(new Set([1, 2, 3]))).toEqual([1, 2, 3]);
   expect(d3a(new Set([1, 2, 3]))).toHaveProperty("min");
+});
+
+test("should get array item", () => {
+  expect(d3a([1, 2, 3]).item(1)).toBe(2);
+});
+
+test("should perform slices methods", () => {
+  const array = d3a([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+  expect(array.after(5)).toEqual([6, 7, 8, 9, 10, 11, 12]);
+  expect(() => array.after(14)).toThrow();
+  expect(array.before(5)).toEqual([0, 1, 2, 3, 4]);
+  expect(array.between(5, 7)).toEqual([5, 6, 7]);
+  expect(array.head(5)).toEqual([0, 1, 2, 3, 4]);
+  expect(array.head()).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  expect(array.head(-5)).toEqual([8, 9, 10, 11, 12]);
+});
+
+test("should drop field", () => {
+  expect(d3Array.drop("date")[0]).toEqual({ name: "jim", amount: "34.0" });
+});
+
+test("should rename field", () => {
+  expect(d3Array.rename("date", "birthday")[0].birthday).toEqual("2015-12-11");
+});
+
+test("should cast date", () => {
+  const date = new Date("2015-12-11T00:00:00.000Z");
+  expect(
+    d3a(["2015-12-11", "2015-12-11", "2015-12-11"]).cast((d) => new Date(d)),
+  ).toEqual(
+    [date, date, date],
+  );
+  /*  expect(d3Array.toDates("date")[0]).toEqual(
+    { date: date, name: "jim", amount: "34.0" },
+  ); */
+});
+
+test("should cast number", () => {
+  expect(d3a(["2015", "2016", "2017"]).map(parseFloat)).toEqual(
+    [2015, 2016, 2017],
+  );
+  /* expect(d3Array.parseFloats("amount")[0]).toEqual(
+    { amount: 34.0, name: "jim", date: "2015-12-11" },
+  ); */
+});
+
+test("should cast autoType", () => {
+  const ddata = [
+    { name: "jim", amount: "34.0", date: "2015-12-11", apr: "false" },
+    { name: "carl", amount: "120.11", date: "2015-12-11", apr: "true" },
+    { name: "stacy", amount: "12.01", date: "2016-04-01", apr: "true" },
+    { name: "stacy", amount: "34.05", date: "2016-04-01", apr: "false" },
+  ];
+  expect(d3a(ddata).cast(autoType)).toEqual([
+    {
+      name: "jim",
+      amount: 34.0,
+      date: new Date("2015-12-11T00:00:00.000Z"),
+      apr: false,
+    },
+    {
+      name: "carl",
+      amount: 120.11,
+      date: new Date("2015-12-11T00:00:00.000Z"),
+      apr: true,
+    },
+    {
+      name: "stacy",
+      amount: 12.01,
+      date: new Date("2016-04-01T00:00:00.000Z"),
+      apr: true,
+    },
+    {
+      name: "stacy",
+      amount: 34.05,
+      date: new Date("2016-04-01T00:00:00.000Z"),
+      apr: false,
+    },
+  ]);
 });
