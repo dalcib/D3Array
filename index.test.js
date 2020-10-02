@@ -13,7 +13,7 @@ import {
   descending,
 } from "https://cdn.skypack.dev/d3-array@^2.4.0";
 //} from "./node_modules/d3-array/src/index.js";
-import { D3Array, d3a, autoType } from "./index.ts";
+import { D3Array, d3a, autoType, toBool } from "./index.ts";
 
 const data = [
   { name: "jim", amount: "34.0", date: "2015-12-11" },
@@ -183,39 +183,49 @@ test("should rename field", () => {
 test("should cast date", () => {
   const date = new Date("2015-12-11T00:00:00.000Z");
   expect(
-    d3a(["2015-12-11", "2015-12-11", "2015-12-11"]).cast((d) => new Date(d)),
+    d3a(["2015-12-11", "2015-12-11", "2015-12-11"]).map((d) => new Date(d)),
   ).toEqual(
     [date, date, date],
   );
-  /*  expect(d3Array.toDates("date")[0]).toEqual(
+  expect(
+    d3Array.map(({ date, ...rest }) => ({ date: new Date(date), ...rest }))[0],
+  ).toEqual(
     { date: date, name: "jim", amount: "34.0" },
-  ); */
+  );
 });
 
 test("should cast number", () => {
   expect(d3a(["2015", "2016", "2017"]).map(parseFloat)).toEqual(
     [2015, 2016, 2017],
   );
-  /* expect(d3Array.parseFloats("amount")[0]).toEqual(
+  expect(
+    d3Array.map(({ amount, ...rest }) => ({
+      amount: parseFloat(amount),
+      ...rest,
+    }))[0],
+  ).toEqual(
     { amount: 34.0, name: "jim", date: "2015-12-11" },
-  ); */
+  );
+  expect(d3Array.cast({ amount: parseFloat })[0]).toEqual(
+    { amount: 34.0, name: "jim", date: "2015-12-11" },
+  );
 });
 
 test("should cast autoType", () => {
   const ddata = [
     { name: "jim", amount: "34.0", date: "2015-12-11", apr: "false" },
-    { name: "carl", amount: "120.11", date: "2015-12-11", apr: "true" },
+    /*     { name: "carl", amount: "120.11", date: "2015-12-11", apr: "true" },
     { name: "stacy", amount: "12.01", date: "2016-04-01", apr: "true" },
-    { name: "stacy", amount: "34.05", date: "2016-04-01", apr: "false" },
+    { name: "stacy", amount: "34.05", date: "2016-04-01", apr: "false" }, */
   ];
-  expect(d3a(ddata).cast(autoType)).toEqual([
+  const expData = [
     {
       name: "jim",
       amount: 34.0,
       date: new Date("2015-12-11T00:00:00.000Z"),
       apr: false,
     },
-    {
+    /*     {
       name: "carl",
       amount: 120.11,
       date: new Date("2015-12-11T00:00:00.000Z"),
@@ -232,6 +242,15 @@ test("should cast autoType", () => {
       amount: 34.05,
       date: new Date("2016-04-01T00:00:00.000Z"),
       apr: false,
-    },
-  ]);
+    }, */
+  ];
+  expect(d3a(ddata).map(autoType)).toEqual(expData);
+  expect(
+    d3a(ddata).cast({
+      //amount: parseFloat,
+      amount: Number,
+      date: (d) => new Date(d),
+      apr: toBool,
+    }),
+  ).toEqual(expData);
 });

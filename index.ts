@@ -35,14 +35,7 @@ import {
   superset,
   disjoint,
 } from "https://cdn.skypack.dev/d3-array@^2.4.0";
-/*  import {
-  ticks,
-  tickIncrement,
-  tickStep,
-  range,
-  ascending,
-  descending,
-} from "https://cdn.skypack.dev/d3-array@^2.4.0";  */
+//export * from "https://cdn.skypack.dev/d3-array@^2.4.0";
 
 type NestedMap<TDatum, TKey> = Map<TKey, NestedMap<TDatum, TKey> | TDatum[]>;
 type NestedArray<TDatum, TKey> = [TKey, NestedArray<TDatum, TKey> | TDatum[]];
@@ -296,39 +289,17 @@ export class D3Array<T> extends Array<T> {
     return this.filter((d, i, a) => a.indexOf(d) === i);
   }
 
-  /*  castNum(this: string[]): (number | undefined)[] {
-    return this.map((value, i) => castNum(value, i));
-  }
-
-  castNums(
-    field: keyof T,
-  ) {
-    return this.map(({ [field]: stringArray, ...rest }, i) => ({
-      [field]: castNum(stringArray, i),
-      ...rest,
-    }));
-  }
-
-  castDate(this: string[]) {
-    return this.map((value, i) => castDate(value, i));
-  }
-
-  castDates(
-    field: keyof T,
-  ) {
-    return this.map(({ [field]: stringArray, ...rest }, i) => ({
-      [field]: castDate(stringArray, i),
-      ...rest,
-    }));
-  } */
-
-  cast(fn: Accessor<T, T>) {
-    return this.map(fn);
+  cast<U extends T[keyof T]>(def: { [key in keyof T]: Accessor<U, U> }) {
+    return this.map((obj, i, a) => {
+      const keys = Object.keys(def) as (keyof T)[];
+      keys.map((key) => {
+        obj[key] = def[key](obj[key] as U, i, []) as T[keyof T];
+      });
+      return obj;
+    });
   }
 
   //pivot
-
-  //truncateStrings;
 
   drop(field: keyof T) {
     return this.map(({ [field]: dropedField, ...rest }: T) => ({ ...rest }));
@@ -346,28 +317,7 @@ export function d3a<T>(arrayLike: ArrayLike<T> | T[]) {
   return new D3Array<T>(arrayLike);
 }
 
-/* export function castNum(
-  value: unknown,
-  i?: number,
-  type: "integer" | "float" | undefined = "float",
-) {
-  if (typeof value === "number" && isFinite(value)) return value;
-  if (value === undefined || value === null) return undefined;
-  if (typeof value !== "string") {
-    throw new Error(
-      "All values in the array must to be strings. Found a '" +
-        typeof (value) + "' at index " + i,
-    );
-  } else {
-    return value.length === 0
-      ? undefined
-      : type === "float"
-      ? parseFloat(value)
-      : parseInt(value, 10);
-  }
-} */
-
-export function toInt(value: string) {
+/* export function toInt(value: string) {
   return parseInt(value, 10);
 }
 
@@ -375,24 +325,18 @@ export const toFloat = parseFloat;
 
 export function toDate(value: string) {
   return new Date(value);
-  /*   let m;
-  if (
-    typeof value === "string" && (
-      m = value.match(
-        /^([-+]\d{2})?\d{4}(-\d{2}(-\d{2})?)?(T\d{2}:\d{2}(:\d{2}(\.\d{3})?)?(Z|[-+]\d{2}:\d{2})?)?$/,
-      )
-    )
-  ) {
-    if (
-      (new Date("2019-01-01T00:00").getHours() ||
-        new Date("2019-07-01T00:00").getHours()) && !!m[4] && !m[7]
-    ) {
-      value = value.replace(/-/g, "/").replace(/T/, " ");
-    }
-    return new Date(value as string);
-  } else {
-    throw new Error("The value cannot be cast to date" + value + " " + i);
-  } */
+} */
+
+export function toBool(value: string | number | boolean, def: {
+  True: string | number | boolean;
+  False: string | number | boolean;
+  Undefined?: string | number | boolean;
+}) {
+  if (!def) def = { True: "true", False: "false" };
+  if (value === def.True) return true;
+  else if (value === def.False) return false;
+  else if (value === def.Undefined) return undefined;
+  return null;
 }
 
 export function autoType(
@@ -426,15 +370,4 @@ export function autoType(
     newObject[key] = value;
   });
   return newObject;
-}
-
-export function toBool(value: string | number | boolean, def: {
-  True: string | number | boolean;
-  False: string | number | boolean;
-  Undefined?: string | number | boolean;
-} = { True: "true", False: "false" }) {
-  if (value === def.True) return true;
-  else if (value === def.False) return false;
-  else if (value === def.Undefined) return undefined;
-  return null;
 }
