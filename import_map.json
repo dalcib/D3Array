@@ -1,5 +1,5 @@
 {
   "imports": {
-    "d3-array": "./node_modules/d3-array/dist/d3-array.js"
+    "d3-array": "https://cdn.skypack.dev/d3-array@^2.4.0"
   }
 }

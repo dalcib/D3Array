@@ -34,22 +34,21 @@ import {
   subset,
   superset,
   disjoint,
-} from "https://cdn.skypack.dev/d3-array@^2.4.0";
-//export * from "https://cdn.skypack.dev/d3-array@^2.4.0";
+} from "d3-array";
+//export * from "d3-array"
 
-type NestedMap<TDatum, TKey> = Map<TKey, NestedMap<TDatum, TKey> | TDatum[]>;
+//type NestedMap<TDatum, TKey> = Map<TKey, NestedMap<TDatum, TKey> | TDatum[]>;
 type NestedArray<TDatum, TKey> = [TKey, NestedArray<TDatum, TKey> | TDatum[]];
 type Accessor<T, U> = (
   datum: T,
   index: number,
   array: Iterable<T>,
 ) => U | undefined | null;
-type Comparator<T> = (a: T, b: T) => number;
 type Reducer<T, U> = (value: T[]) => U;
+//type Comparator<T> = (a: T, b: T) => number;
 
 export class D3Array<T> extends Array<T> {
-  constructor(arrayLike: ArrayLike<T> | Iterable<T>) {
-    const array = Array.from(arrayLike);
+  constructor(...array: T[]) {
     super(...array);
   }
 
@@ -262,8 +261,8 @@ export class D3Array<T> extends Array<T> {
     return this[n];
   }
 
-  by<Z extends keyof T>(field: Z): T[Z][] {
-    return this.map((val) => val[field]) as T[Z][];
+  by<Z extends keyof T>(this: D3Array<T>, field: Z): D3Array<T[Z]> {
+    return this.map((val) => val[field]) as D3Array<T[Z]>;
   }
   after(n: number): T[] {
     if (n > this.length) throw Error("Index must be less or equal than length");
@@ -289,11 +288,13 @@ export class D3Array<T> extends Array<T> {
     return this.filter((d, i, a) => a.indexOf(d) === i);
   }
 
-  cast<U extends T[keyof T]>(def: { [key in keyof T]: Accessor<U, U> }) {
+  cast<U>(def: { [key in keyof T]: Accessor<T, U> }) {
     return this.map((obj, i, a) => {
       const keys = Object.keys(def) as (keyof T)[];
       keys.map((key) => {
-        obj[key] = def[key](obj[key] as U, i, []) as T[keyof T];
+        const func = def[key];
+        //@ts-ignore .
+        obj[key] = func(obj[key]) as U;
       });
       return obj;
     });
@@ -311,13 +312,89 @@ export class D3Array<T> extends Array<T> {
       ...rest,
     }));
   }
+
+  pivot_longer<K extends keyof T>(cols: K[]) {
+    return cols
+      .map((col) =>
+        this.map((d) => {
+          var keysToKeep = Object.keys(d).filter((k) =>
+            !cols.some((c) => c == k)
+          );
+          var keep = keysToKeep.reduce(
+            //@ts-ignore .
+            (obj, cur) => ({ [cur]: (d)[cur], ...obj }),
+            {},
+          );
+          const val = d[col];
+          type Col = typeof val;
+          return ({ ...keep, key: col, value: d[col] } as unknown) as
+            & Pick<T, Exclude<keyof T, K>>
+            & {
+              key: string;
+              value: Col;
+            };
+        })
+      )
+      .reduce((acc, val) => acc.concat(val), []);
+  }
+
+  pivot_wider<K extends keyof T>(key: K, value: K) {
+    const keys = this.by(key).unique();
+    const countId = Array(keys.length).fill(0);
+    const res = this.map(({ [key]: tKey, [value]: tValue, ...rest }) => {
+      const xKey = tKey as unknown as string;
+      countId[keys.indexOf(tKey)]++;
+      return {
+        ...rest,
+        [xKey]: tValue,
+        idD3Array: countId[keys.indexOf(tKey)],
+      };
+    });
+    return d3a(res).groups((d) => d.idD3Array).map(([idD3Array, values]) => {
+      //@ts-ignore .
+      return values.reduce((prev, cur) => ({ ...prev, ...cur }), {});
+    }).map(({ idD3Array, ...rest }) => ({ ...rest }));
+  }
+
+  fromDataframe<Z extends Record<string, unknown[]>, K extends keyof Z>(
+    dataframe: Z,
+  ) {
+    const lengths: number[] = [];
+    const columns: unknown[][] = [];
+    const keys = Object.keys(dataframe) as K[];
+    keys.forEach((key) => {
+      lengths.push(dataframe[key].length);
+      columns.push(dataframe[key]);
+    });
+    if (!lengths.every((v) => v === lengths[0])) {
+      throw new Error("The length of the columns are not equal");
+    }
+    return Array(lengths[0]).fill({}).map((obj, i) => {
+      const data = {} as { [key in K]: unknown };
+      keys.forEach((key, k) => {
+        data[key] = columns[k][i];
+      });
+      return data;
+    });
+  }
+
+  toDataframe(this: Record<string, unknown>[]) {
+    var dataframe: Record<string, unknown[]> = {};
+    this.forEach((record) => {
+      Object.keys(record).forEach((key) => {
+        if (!dataframe[key]) dataframe[key] = [];
+        dataframe[key].push(record[key]);
+      });
+    });
+    return dataframe;
+  }
 }
 
-export function d3a<T>(arrayLike: ArrayLike<T> | T[]) {
-  return new D3Array<T>(arrayLike);
+export function d3a<T>(iterable: ArrayLike<T> | T[] | Iterable<T>) {
+  return new D3Array<T>(...Array.from(iterable));
 }
 
-/* export function toInt(value: string) {
+export function toInt(value: string) {
   return parseInt(value, 10);
 }
 
@@ -325,7 +402,7 @@ export const toFloat = parseFloat;
 
 export function toDate(value: string) {
   return new Date(value);
-} */
+}
 
 export function toBool(value: string | number | boolean, def: {
   True: string | number | boolean;

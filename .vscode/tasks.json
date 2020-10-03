@@ -8,7 +8,10 @@
       "type": "shell",
       "command": "deno",
       "args": [
-        "test"
+        "test",
+        "--importmap",
+        "import_map.json",
+        "--unstable"
       ],
       "group": "test",
       "presentation": {

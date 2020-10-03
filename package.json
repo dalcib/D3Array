@@ -4,7 +4,7 @@
   "description": "Array with d3-array chainable methods",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "deno test --importmap import_map.json --unstable"
   },
   "repository": {
     "type": "git",
@@ -17,7 +17,8 @@
     "url": "https://github.com/dalcib/D3Array/issues"
   },
   "homepage": "https://github.com/dalcib/D3Array#readme",
-  "dependencies": {
+  "dependencies": {},
+  "peerDependencies": {
     "d3-array": "^2.8.0"
   }
 }

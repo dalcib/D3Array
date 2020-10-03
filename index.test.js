@@ -21,7 +21,7 @@ const data = [
   { name: "stacy", amount: "12.01", date: "2016-04-01" },
   { name: "stacy", amount: "34.05", date: "2016-04-01" },
 ];
-const d3Array = new D3Array(data);
+const d3Array = d3a(data);
 
 test("should create an array from array", () => {
   expect(d3Array).toEqual(d3Array);
@@ -29,7 +29,8 @@ test("should create an array from array", () => {
 
 test("should create an arroy from Map", () => {
   const map = new Map().set("a", 1).set("b", 2).set("c", 10).set("d", 200);
-  expect(new D3Array(map)).toEqual([["a", 1], ["b", 2], ["c", 10], ["d", 200]]);
+  const arr = d3a(map);
+  expect(arr).toEqual([["a", 1], ["b", 2], ["c", 10], ["d", 200]]);
 });
 
 test("should chain a map fn", () => {
@@ -41,7 +42,7 @@ test("should by", () => {
 });
 
 test("should emit max and min", () => {
-  const testMinMax = new D3Array([3, 2, 1, 1, 6, 2, 4]);
+  const testMinMax = d3a([3, 2, 1, 1, 6, 2, 4]);
   expect(d3Array.by("name").max()).toEqual("stacy");
   expect(d3Array.by("name").min()).toEqual("carl");
   expect(testMinMax.min()).toEqual(1);
@@ -70,7 +71,7 @@ test("should index", () => {
   expect(d3Array.indexes((d) => d.amount)[1]).toEqual(
     ["120.11", { name: "carl", amount: "120.11", date: "2015-12-11" }],
   );
-  //expect(d3Array.index((d) => d.name)).toThrow('duplicate key')
+  expect(() => d3Array.index((d) => d.name)).toThrow("duplicate key");
   const indexed = d3Array.index((d) => d.amount);
   expect(indexed.has("120.11")).toBeTruthy();
   expect(indexed.get("34.0")).toEqual(
@@ -104,25 +105,25 @@ test("should search with least, greatest ams Index", () => {
 });
 
 test("should cross ", () => {
-  expect(new D3Array([1, 2]).cross(["x", "y"], (a, b) => `${a}/${b}`)).toEqual(
+  expect(d3a([1, 2]).cross(["x", "y"], (a, b) => `${a}/${b}`)).toEqual(
     ["1/x", "1/y", "2/x", "2/y"],
   );
 });
 
 test("should pairs", () => {
-  expect(new D3Array([1, 2, 3, 4]).pairs()).toEqual([[1, 2], [2, 3], [3, 4]]);
+  expect(d3a([1, 2, 3, 4]).pairs()).toEqual([[1, 2], [2, 3], [3, 4]]);
 });
 
-/* test('should range', ()=>{
-  expect(D3Array.range(10)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]) 
-  expect(D3Array.range(5, 10)).toEqual([5, 6, 7, 8, 9]) 
-  expect(D3Array.range(10,20,2)).toEqual([10, 12, 14, 16, 18]) 
-}) */
+//test('should range', ()=>{
+// expect(D3Array.range(10)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+// expect(D3Array.range(5, 10)).toEqual([5, 6, 7, 8, 9])
+// expect(D3Array.range(10,20,2)).toEqual([10, 12, 14, 16, 18])
+//})
 
 test("should permute", () => {
-  expect(new D3Array(["a", "b", "c", "d", "e"]).permute([1, 2, 0, 4, 3]))
+  expect(d3a(["a", "b", "c", "d", "e"]).permute([1, 2, 0, 4, 3]))
     .toEqual(["b", "c", "a", "e", "d"]);
-  const arrayObject = new D3Array([
+  const arrayObject = d3a([
     { yield: 27, variety: "Manchuria", year: 1931, site: "University Farm" },
     { yield: 17, variety: "Other", year: 1931, site: "University House" },
   ]);
@@ -133,23 +134,23 @@ test("should permute", () => {
 });
 
 test("should shuffle", () => {
-  expect((new D3Array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])).shuffle().length).toBe(
+  expect((d3a([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])).shuffle().length).toBe(
     10,
   );
-  expect((new D3Array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])).shuffle(5).length).toBe(
+  expect((d3a([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])).shuffle(5).length).toBe(
     10,
   );
-  expect((new D3Array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])).shuffle(0, 5).length)
+  expect((d3a([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])).shuffle(0, 5).length)
     .toBe(10);
 });
 
 test("should perform sets", () => {
-  expect((new D3Array([0, 1, 2, 0])).difference([1])).toEqual([0, 2]);
-  expect((new D3Array([0, 2, 1, 0])).union([1, 3])).toEqual([0, 2, 1, 3]);
-  expect((new D3Array([0, 2, 1, 0])).intersection([1, 3])).toEqual([1]);
-  expect((new D3Array([0, 2, 1, 3, 0])).superset([1, 3])).toEqual(true);
-  expect((new D3Array([1, 3])).subset([0, 2, 1, 3, 0])).toEqual(true);
-  expect((new D3Array([1, 3])).disjoint([2, 4])).toEqual(true);
+  expect((d3a([0, 1, 2, 0])).difference([1])).toEqual([0, 2]);
+  expect((d3a([0, 2, 1, 0])).union([1, 3])).toEqual([0, 2, 1, 3]);
+  expect((d3a([0, 2, 1, 0])).intersection([1, 3])).toEqual([1]);
+  expect((d3a([0, 2, 1, 3, 0])).superset([1, 3])).toEqual(true);
+  expect((d3a([1, 3])).subset([0, 2, 1, 3, 0])).toEqual(true);
+  expect((d3a([1, 3])).disjoint([2, 4])).toEqual(true);
 });
 
 test("should create a new d3-chained array", () => {
@@ -214,9 +215,9 @@ test("should cast number", () => {
 test("should cast autoType", () => {
   const ddata = [
     { name: "jim", amount: "34.0", date: "2015-12-11", apr: "false" },
-    /*     { name: "carl", amount: "120.11", date: "2015-12-11", apr: "true" },
+    { name: "carl", amount: "120.11", date: "2015-12-11", apr: "true" },
     { name: "stacy", amount: "12.01", date: "2016-04-01", apr: "true" },
-    { name: "stacy", amount: "34.05", date: "2016-04-01", apr: "false" }, */
+    { name: "stacy", amount: "34.05", date: "2016-04-01", apr: "false" },
   ];
   const expData = [
     {
@@ -225,7 +226,7 @@ test("should cast autoType", () => {
       date: new Date("2015-12-11T00:00:00.000Z"),
       apr: false,
     },
-    /*     {
+    {
       name: "carl",
       amount: 120.11,
       date: new Date("2015-12-11T00:00:00.000Z"),
@@ -242,15 +243,77 @@ test("should cast autoType", () => {
       amount: 34.05,
       date: new Date("2016-04-01T00:00:00.000Z"),
       apr: false,
-    }, */
+    },
   ];
   expect(d3a(ddata).map(autoType)).toEqual(expData);
-  expect(
-    d3a(ddata).cast({
-      //amount: parseFloat,
-      amount: Number,
-      date: (d) => new Date(d),
-      apr: toBool,
-    }),
-  ).toEqual(expData);
+  const casted = d3a(ddata).cast({
+    //amount: parseFloat,
+    amount: Number,
+    date: (d) => new Date(d),
+    apr: toBool,
+  });
+  expect(casted).toEqual(expData);
+});
+
+test("should create a pivot_longer array", () => {
+  const wider = [
+    {
+      country: "Argentina",
+      gender: "female",
+      "2015": 0.3,
+      "2016": 0.7,
+      "2017": 0.7,
+    },
+    {
+      country: "Armenia",
+      gender: "female",
+      "2015": 7.2,
+      "2016": 7.7,
+      "2017": 7.6,
+    },
+    {
+      country: "Brazil",
+      gender: "masculine",
+      "2015": 8.2,
+      "2016": 7.1,
+      "2017": 9.2,
+    },
+  ];
+  const longer = [
+    { gender: "female", country: "Argentina", key: "2015", value: 0.3 },
+    { gender: "female", country: "Armenia", key: "2015", value: 7.2 },
+    { gender: "masculine", country: "Brazil", key: "2015", value: 8.2 },
+    { gender: "female", country: "Argentina", key: "2016", value: 0.7 },
+    { gender: "female", country: "Armenia", key: "2016", value: 7.7 },
+    { gender: "masculine", country: "Brazil", key: "2016", value: 7.1 },
+    { gender: "female", country: "Argentina", key: "2017", value: 0.7 },
+    { gender: "female", country: "Armenia", key: "2017", value: 7.6 },
+    { gender: "masculine", country: "Brazil", key: "2017", value: 9.2 },  
+  ];
+  expect(d3a(wider).pivot_longer(["2015", "2016", "2017"])).toEqual(longer);
+  expect(d3a(longer).pivot_wider("key", "value")).toEqual();
+});
+
+test("should get array from a dataframe object", () => {
+  // deno-fmt-ignore
+  const dataframe = {'regiment': ['Nighthawks', 'Nighthawks', 'Nighthawks', 'Nighthawks', 'Dragoons', 'Dragoons', 'Dragoons', 'Dragoons', 'Scouts', 'Scouts', 'Scouts', 'Scouts'], 
+        'company': ['1st', '1st', '2nd', '2nd', '1st', '1st', '2nd', '2nd','1st', '1st', '2nd', '2nd'], 
+        'TestScore': [4, 24, 31, 2, 3, 4, 24, 31, 2, 3, 2, 3]}
+  const data = [
+    { regiment: "Nighthawks", company: "1st", TestScore: 4 },
+    { regiment: "Nighthawks", company: "1st", TestScore: 24 },
+    { regiment: "Nighthawks", company: "2nd", TestScore: 31 },
+    { regiment: "Nighthawks", company: "2nd", TestScore: 2 },
+    { regiment: "Dragoons", company: "1st", TestScore: 3 },
+    { regiment: "Dragoons", company: "1st", TestScore: 4 },
+    { regiment: "Dragoons", company: "2nd", TestScore: 24 },
+    { regiment: "Dragoons", company: "2nd", TestScore: 31 },
+    { regiment: "Scouts", company: "1st", TestScore: 2 },
+    { regiment: "Scouts", company: "1st", TestScore: 3 },
+    { regiment: "Scouts", company: "2nd", TestScore: 2 },
+    { regiment: "Scouts", company: "2nd", TestScore: 3 },
+  ];
+  const arr = d3a([]).fromDataframe(dataframe);
+  expect(d3a([]).fromDataframe(dataframe)).toEqual(data);
+  expect(d3a(data).toDataframe()).toEqual(dataframe);
 });
