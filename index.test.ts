@@ -1,4 +1,3 @@
-// @deno-types="./d3-array.d.ts"
 import { expect } from "https://deno.land/x/expect/mod.ts";
 import {
   test,
@@ -8,6 +7,7 @@ import {
   afterEach,
   afterAll,
 } from "https://deno.land/x/hooked/mod.ts";
+// @deno-types="./d3-array.d.ts"
 import {
   ascending,
   descending,
@@ -64,6 +64,7 @@ test("should group ", () => {
   expect(grouped.get("jim")).toEqual(
     [{ name: "jim", amount: "34.0", date: "2015-12-11" }],
   );
+  //@ts-ignore .
   expect(grouped.get("stacy").length).toEqual(2);
 });
 
@@ -127,7 +128,7 @@ test("should permute", () => {
     { yield: 27, variety: "Manchuria", year: 1931, site: "University Farm" },
     { yield: 17, variety: "Other", year: 1931, site: "University House" },
   ]);
-  expect(arrayObject.permuteObject(["site", "variety", "yield"])).toEqual([
+  expect(arrayObject.arrange(["site", "variety", "yield"])).toEqual([
     ["University Farm", "Manchuria", 27],
     ["University House", "Other", 17],
   ]);
@@ -207,6 +208,7 @@ test("should cast number", () => {
   ).toEqual(
     { amount: 34.0, name: "jim", date: "2015-12-11" },
   );
+  //@ts-ignore . convert
   expect(d3Array.cast({ amount: parseFloat })[0]).toEqual(
     { amount: 34.0, name: "jim", date: "2015-12-11" },
   );
@@ -249,35 +251,20 @@ test("should cast autoType", () => {
   const casted = d3a(ddata).cast({
     //amount: parseFloat,
     amount: Number,
-    date: (d) => new Date(d),
+    //@ts-ignore .
+    date: (d: string) => new Date(d),
+    //@ts-ignore .
     apr: toBool,
   });
   expect(casted).toEqual(expData);
 });
 
-test("should create a pivot_longer array", () => {
+test("should create a pivot array", () => {
+  // deno-fmt-ignore
   const wider = [
-    {
-      country: "Argentina",
-      gender: "female",
-      "2015": 0.3,
-      "2016": 0.7,
-      "2017": 0.7,
-    },
-    {
-      country: "Armenia",
-      gender: "female",
-      "2015": 7.2,
-      "2016": 7.7,
-      "2017": 7.6,
-    },
-    {
-      country: "Brazil",
-      gender: "masculine",
-      "2015": 8.2,
-      "2016": 7.1,
-      "2017": 9.2,
-    },
+    {country: "Argentina", gender: "female", "2015": 0.3, "2016": 0.7, "2017": 0.7,},
+    {country: "Armenia", gender: "female", "2015": 7.2, "2016": 7.7, "2017": 7.6, },
+    {country: "Brazil", gender: "masculine", "2015": 8.2, "2016": 7.1, "2017": 9.2,},
   ];
   const longer = [
     { gender: "female", country: "Argentina", key: "2015", value: 0.3 },
@@ -288,10 +275,14 @@ test("should create a pivot_longer array", () => {
     { gender: "masculine", country: "Brazil", key: "2016", value: 7.1 },
     { gender: "female", country: "Argentina", key: "2017", value: 0.7 },
     { gender: "female", country: "Armenia", key: "2017", value: 7.6 },
-    { gender: "masculine", country: "Brazil", key: "2017", value: 9.2 },  
+    { gender: "masculine", country: "Brazil", key: "2017", value: 9.2 },
   ];
   expect(d3a(wider).pivot_longer(["2015", "2016", "2017"])).toEqual(longer);
-  expect(d3a(longer).pivot_wider("key", "value")).toEqual();
+  expect(d3a(longer).pivot_wider("key", "value")).toEqual([
+    { 2015: 0.3, 2016: 0.7, 2017: 0.7, gender: "female", country: "Argentina" },
+    { 2015: 7.2, 2016: 7.7, 2017: 7.6, gender: "female", country: "Armenia" },
+    { 2015: 8.2, 2016: 7.1, 2017: 9.2, gender: "masculine", country: "Brazil" },
+  ]);
 });
 
 test("should get array from a dataframe object", () => {
@@ -316,4 +307,18 @@ test("should get array from a dataframe object", () => {
   const arr = d3a([]).fromDataframe(dataframe);
   expect(d3a([]).fromDataframe(dataframe)).toEqual(data);
   expect(d3a(data).toDataframe()).toEqual(dataframe);
+});
+
+test("should insert", () => {
+  const array = [99, 78, 56, 89];
+  d3Array.insert(array, "age");
+  expect(d3Array).toEqual([
+    { name: "jim", amount: 34.0, date: "2015-12-11", age: 99 },
+    { name: "carl", amount: 120.11, date: "2015-12-11", age: 78 },
+    { name: "stacy", amount: 12.01, date: "2016-04-01", age: 56 },
+    { name: "stacy", amount: 34.05, date: "2016-04-01", age: 89 },
+  ]);
+  expect(() => d3Array.insert(array, "age")).toThrow();
+  expect(() => d3Array.insert(array, "age", true)).not.toThrow();
+  expect(() => d3Array.insert([1, 2, 3], "xxx")).toThrow();
 });
