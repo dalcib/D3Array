@@ -35,6 +35,7 @@ import {
   superset,
   disjoint,
 } from "d3-array";
+//} from "https://cdn.skypack.dev/d3-array@^2.4.0";
 //export * from "d3-array"
 
 type Accessor<T, U> = (
@@ -47,7 +48,6 @@ type Reducer<T, U> = (value: T[]) => U;
 export class D3Array<T> extends Array<T> implements Array<T> {
   constructor(...array: T[]) {
     super(...array);
-    //Object.setPrototypeOf(this, D3Array.prototype);
   }
 
   // d3-array methods
@@ -236,26 +236,10 @@ export class D3Array<T> extends Array<T> implements Array<T> {
   by<Z extends keyof T>(field: Z): D3Array<T[Z]> {
     return d3a(this.map((val) => val[field]));
   }
-  after(n: number): D3Array<T> {
-    if (n > this.length) throw Error("Index must be less or equal than length");
-    return d3a(this.slice(n + 1, this.length));
-  }
-  before(n: number): D3Array<T> {
-    return d3a(this.slice(0, n));
-  }
-  between(start: number, end: number): D3Array<T> {
-    if (end > this.length) throw Error("End must be less or equal than length");
-    //const n = end > this.length ? this.length : end;
-    return d3a(this.slice(start, end + 1));
-  }
-  head(n = 10) {
-    return n < 0
-      ? d3a(this.slice(this.length + n, this.length))
-      : d3a(this.slice(0, n));
-  }
 
-  leftJoin(array: T[]): D3Array<T> {
-    return this;
+  // eslint-disable-next-line ban-types
+  to(func: Function) {
+    return func(this);
   }
 
   unique() {
@@ -287,6 +271,21 @@ export class D3Array<T> extends Array<T> implements Array<T> {
       [newField]: renamedFiled,
       ...rest,
     })));
+  }
+
+  insert<U>(array: U[], field: string | keyof T, overwrite = false) {
+    if (array.length !== this.length) {
+      throw new Error("The array must have the same lentgh");
+    }
+    return d3a(this.map((d, i) => {
+      //@ts-ignore .
+      if (d[field] && overwrite === false) {
+        throw new Error("The property already exist");
+      }
+      //@ts-ignore .
+      d[field] = array[i];
+      return d;
+    }));
   }
 
   pivot_longer<K extends keyof T>(cols: K[]) {
@@ -333,57 +332,6 @@ export class D3Array<T> extends Array<T> implements Array<T> {
       return values.reduce((prev, cur) => ({ ...prev, ...cur }), {});
     }).map(({ idD3Array, ...rest }) => ({ ...rest }));
   }
-
-  insert<U>(array: U[], field: string | keyof T, overwrite = false) {
-    if (array.length !== this.length) {
-      throw new Error("The array must have the same lentgh");
-    }
-    return d3a(this.map((d, i) => {
-      //@ts-ignore .
-      if (d[field] && overwrite === false) {
-        throw new Error("The property already exist");
-      }
-      //@ts-ignore .
-      d[field] = array[i];
-      return d;
-    }));
-  }
-
-  fromDataframe<Z extends Record<string, unknown[]>, K extends keyof Z>(
-    dataframe: Z,
-  ) {
-    const lengths: number[] = [];
-    const columns: unknown[][] = [];
-    const keys = Object.keys(dataframe) as K[];
-    keys.forEach((key) => {
-      lengths.push(dataframe[key].length);
-      columns.push(dataframe[key]);
-    });
-    if (!lengths.every((v) => v === lengths[0])) {
-      throw new Error("The length of the columns are not equal");
-    }
-    return d3a(
-      Array(lengths[0]).fill({}).map((obj, i) => {
-        const data = {} as { [key in K]: unknown };
-        keys.forEach((key, k) => {
-          data[key] = columns[k][i];
-        });
-        return data;
-      }),
-    );
-  }
-
-  toDataframe(this: D3Array<T>) {
-    var dataframe: Record<string, unknown[]> = {};
-    this.forEach((record) => {
-      Object.keys(record).forEach((key) => {
-        if (!dataframe[key]) dataframe[key] = [];
-        const typedKey = key as keyof T;
-        dataframe[key].push(record[typedKey]);
-      });
-    });
-    return dataframe;
-  }
 }
 
 //Public API
@@ -398,6 +346,8 @@ export function d3a<T>(iterable: ArrayLike<T> | T[] | Iterable<T>) {
     return new D3Array(...array);
   }
 }
+
+// Utils
 
 export function toInt(value: string) {
   return parseInt(value, 10);
@@ -453,3 +403,65 @@ export function autoType(
   });
   return newObject;
 }
+
+export function fromDataframe<
+  T,
+  Z extends Record<string, unknown[]>,
+  K extends keyof Z,
+>(
+  dataframe: Z,
+) {
+  const lengths: number[] = [];
+  const columns: unknown[][] = [];
+  const keys = Object.keys(dataframe) as K[];
+  keys.forEach((key) => {
+    lengths.push(dataframe[key].length);
+    columns.push(dataframe[key]);
+  });
+  if (!lengths.every((v) => v === lengths[0])) {
+    throw new Error("The length of the columns are not equal");
+  }
+  return d3a(
+    Array(lengths[0]).fill({}).map((obj, i) => {
+      const data = {} as { [key in K]: unknown };
+      keys.forEach((key, k) => {
+        data[key] = columns[k][i];
+      });
+      return data;
+    }),
+  );
+}
+
+export function toDataframe<T>(data: Array<T>) {
+  var dataframe: Record<string, unknown[]> = {};
+  data.forEach((record) => {
+    Object.keys(record).forEach((key) => {
+      if (!dataframe[key]) dataframe[key] = [];
+      const typedKey = key as keyof T;
+      dataframe[key].push(record[typedKey]);
+    });
+  });
+  return dataframe;
+}
+
+/* after(n: number): D3Array<T> {
+    if (n > this.length) throw Error("Index must be less or equal than length");
+    return d3a(this.slice(n + 1, this.length));
+  }
+  before(n: number): D3Array<T> {
+    return d3a(this.slice(0, n));
+  }
+  between(start: number, end: number): D3Array<T> {
+    if (end > this.length) throw Error("End must be less or equal than length");
+    //const n = end > this.length ? this.length : end;
+    return d3a(this.slice(start, end + 1));
+  }
+  head(n = 10) {
+    return n < 0
+      ? d3a(this.slice(this.length + n, this.length))
+      : d3a(this.slice(0, n));
+  } 
+
+  leftJoin(array: T[]): D3Array<T> {
+    return this;
+  }*/
